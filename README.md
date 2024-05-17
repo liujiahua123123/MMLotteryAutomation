@@ -16,6 +16,8 @@ Example usage:
         8000,
         20*1000*60,
     )
+
+    await pool.run()
 ```
 
 ```js
