@@ -362,6 +362,7 @@ export const solveCaptchaAndSubmit = async (page: Page) => {
         captcha_submit_tries: captcha_submit_tries
     }
 }
+
 export const completeOverseaLottery = async(
     page: Page,
     lottery: LotteryDocument,
@@ -407,22 +408,27 @@ export const completeOverseaLottery = async(
     //password
     await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl:nth-child(8) > dd > p:nth-child(2) > input[type=text]", lottery.password.trim())
 
-    //peer name
-    const peerNameSplit = lottery.peerName.split(" ")
-    const peerFirstName = peerNameSplit[0].trim()
-    const peerLastName = peerNameSplit[1].trim()
-    await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl:nth-child(9) > dd > p:nth-child(2) > input[type=text]:nth-child(1)", peerFirstName)
-    await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl:nth-child(9) > dd > p:nth-child(2) > input[type=text]:nth-child(2)", peerLastName)
-    //peer phone
-    const peerPhoneFull = parsePhoneFull(lottery.peerPhone)
-    await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl:nth-child(9) > dd > p:nth-child(4) > input[type=text]", peerPhoneFull)
+    if(await checkElementExistence(page, "#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl:nth-child(9) > dd > p:nth-child(2) > input[type=text]:nth-child(1)")) {
+        //peer name
+        const peerNameSplit = lottery.peerName.split(" ")
+        const peerFirstName = peerNameSplit[0].trim()
+        const peerLastName = peerNameSplit[1].trim()
+        await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl:nth-child(9) > dd > p:nth-child(2) > input[type=text]:nth-child(1)", peerFirstName)
+        await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl:nth-child(9) > dd > p:nth-child(2) > input[type=text]:nth-child(2)", peerLastName)
+        //peer phone
+        const peerPhoneFull = parsePhoneFull(lottery.peerPhone)
+        await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl:nth-child(9) > dd > p:nth-child(4) > input[type=text]", peerPhoneFull)
+    }
 
     await delayWithNormalDistribution(randomChoice([2000, 10000]))
     await page.click("#wrap > form > section:nth-child(2) > div:nth-child(2) > input.next")
 
     //SHOW
-    await delayWithNormalDistribution(10000)
-    await assertCurrentHeading(page, "Priority 1")
+    await delayWithNormalDistribution(2000)
+    const currHeading = await getCurrentHeading(page)
+    if(currHeading !== "Priority 1" && currHeading !== "Choice 1"){
+        await throwLotteryError("Failed to reach show selection")
+    }
     await selectShow(page, lottery.showNo)//ONE BASED!!
     await page.click("#wrap > form > section:nth-child(2) > div:nth-child(2) > input.next")
 
@@ -434,6 +440,17 @@ export const completeOverseaLottery = async(
     //COUNT
     await delayWithNormalDistribution(2000)
     await page.selectOption("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl > dd:nth-child(3) > p > select", { value: '2'});
+    if(await checkElementExistence(page, "#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl.vertical_table.white_back.line_top > dd:nth-child(3) > p:nth-child(2) > input[type=text]:nth-child(1)")){
+        const peerNameSplit = lottery.peerName.split(" ")
+        const peerFirstName = peerNameSplit[0].trim()
+        const peerLastName = peerNameSplit[1].trim()
+        await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl.vertical_table.white_back.line_top > dd:nth-child(3) > p:nth-child(2) > input[type=text]:nth-child(1)", peerFirstName)
+        await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl.vertical_table.white_back.line_top > dd:nth-child(3) > p:nth-child(2) > input[type=text]:nth-child(2)", peerLastName)
+
+        const peerPhoneFull = parsePhoneFull(lottery.peerPhone)
+        await page.fill("#wrap > form > section:nth-child(1) > div > div.contents_body.lightpink_back > dl.vertical_table.white_back.line_top > dd:nth-child(3) > p:nth-child(4) > input[type=text]", peerPhoneFull)
+    }
+
     await page.click("#wrap > form > section:nth-child(2) > div:nth-child(2) > input.next")
 
     //CONFIRM
